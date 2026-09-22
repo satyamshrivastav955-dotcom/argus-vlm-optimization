@@ -1,0 +1,72 @@
+# =============================================================
+# Argus VLM Optimization — KV Cache Experiment Configuration
+# =============================================================
+
+kv_cache:
+
+  # ---- Experiment configurations ----------------------------
+  # Each entry defines one KV-cache backend variant to benchmark.
+  # status: enabled | disabled
+  # If a backend fails at runtime, it is marked FAILED in results.
+
+  experiments:
+
+    - name: "baseline_fp16_dynamic"
+      backend: "dynamic"       # Standard HF DynamicCache (FP16)
+      nbits: 16
+      enabled: true
+      description: >
+        Default Hugging Face dynamic KV cache in FP16.
+        This is the unmodified baseline — no quantization applied.
+
+    - name: "quantized_hqq_4bit"
+      backend: "HQQ"
+      nbits: 4
+      enabled: true
+      description: >
+        Half-Quadratic Quantization (HQQ) at INT4 precision.
+        Applied to KV cache only; model weights remain FP16.
+
+    - name: "quantized_hqq_2bit"
+      backend: "HQQ"
+      nbits: 2
+      enabled: true
+      description: >
+        HQQ at INT2 precision. Higher memory reduction but
+        potentially degraded generation quality. Measure carefully.
+
+    - name: "quantized_quanto_4bit"
+      backend: "quanto"
+      nbits: 4
+      enabled: true
+      description: >
+        Hugging Face Quanto INT4 KV cache quantization.
+        Alternative to HQQ — different quantization algorithm.
+
+  # ---- Baseline short-context experiment --------------------
+  short_context:
+    prompt: "Describe the scene in detail, including all objects, people, and activities visible."
+    max_new_tokens: 256
+    image_size: [448, 448]
+    num_warmup_runs: 1       # Discard first run (model load overhead)
+    num_eval_runs: 3         # Average over N runs
+
+  # ---- Long-context synthetic experiment --------------------
+  long_context:
+    # Approximate token counts to test (will be clamped to GPU memory)
+    # Achieved by repeating a prompt + image description string.
+    target_context_lengths: [1024, 5120, 10240, 20480, 51200]
+
+    # Configs to test at each context length (subset of experiments above)
+    test_configs: ["baseline_fp16_dynamic", "quantized_hqq_4bit", "quantized_hqq_2bit"]
+
+    max_new_tokens: 128   # Shorter for long-context to reduce latency
+    oom_retry: false      # Do not retry on OOM — record FAILED and continue
+
+  # ---- Similarity metric ------------------------------------
+  quality:
+    primary_metric: "rouge_l"
+    # rouge_l is an auxiliary metric only.
+    # It is NOT a surveillance-event correctness metric.
+    # Event-level recall must be evaluated separately with ground truth.
+    reference_config: "baseline_fp16_dynamic"

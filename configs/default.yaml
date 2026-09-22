@@ -1,0 +1,50 @@
+# =============================================================
+# Argus VLM Optimization — Default Configuration
+# =============================================================
+# This file contains global defaults shared across all experiments.
+# Override specific sections in experiment-specific configs.
+# =============================================================
+
+project:
+  name: "argus-vlm-optimization"
+  version: "0.1.0"
+  description: "VLM optimization experiments for Argus surveillance system"
+
+# ---- Reproducibility ----------------------------------------
+seed: 42
+
+# ---- Model --------------------------------------------------
+model:
+  # Prototype VLM used for experimentation
+  # NOTE: Target Argus VLM is Florence-2 (different model family)
+  # This abstraction layer allows backend swap without changing notebooks.
+  name: "Qwen/Qwen2.5-VL-3B-Instruct"
+  backend: "qwen"  # options: qwen | florence2 (future)
+  dtype: "float16"  # options: float16 | bfloat16 | float32
+  device: "auto"   # options: auto | cuda | cpu
+
+  # Generation defaults
+  generation:
+    max_new_tokens: 256
+    do_sample: false
+    temperature: 1.0
+    top_p: 1.0
+
+# ---- Image/Input -------------------------------------------
+input:
+  image_size: [448, 448]   # [H, W] — resize before VLM
+  # Set null to disable resizing (use native image resolution)
+
+# ---- Paths --------------------------------------------------
+paths:
+  results_root: "results"
+  figures_dir: "results/figures"
+  kv_cache_results: "results/kv_cache"
+  static_frame_results: "results/static_frames"
+  combined_results: "results/combined"
+
+# ---- Logging ------------------------------------------------
+logging:
+  level: "INFO"
+  save_logs: true
+  log_dir: "logs"

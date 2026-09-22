@@ -1,0 +1,135 @@
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.pyo
+
+# ============================================================
+# Jupyter / IPython
+# ============================================================
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+profile_default/
+ipython_config.py
+.jupyter/
+
+# ============================================================
+# Environment
+# ============================================================
+.env
+.env.*
+.venv/
+venv/
+ENV/
+env/
+*.env
+secrets.yaml
+secrets.json
+
+# ============================================================
+# ML / Model artefacts
+# ============================================================
+# Model weights and checkpoints
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.onnx
+*.tflite
+
+# Hugging Face cache
+~/.cache/huggingface/
+.cache/
+*.lock
+
+# ============================================================
+# Large Data / Video
+# ============================================================
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.flv
+*.wmv
+*.m4v
+*.ts
+sample_data/*.mp4
+sample_data/*.avi
+sample_data/*.mov
+
+# Large image datasets
+sample_data/frames/
+sample_data/videos/
+data/
+datasets/
+
+# ============================================================
+# Results (raw — keep CSVs/JSONs, exclude large intermediates)
+# ============================================================
+results/figures/*.png
+results/figures/*.jpg
+results/figures/*.pdf
+# Uncomment below to also exclude results data:
+# results/**/*.csv
+# results/**/*.json
+
+# ============================================================
+# IDE / Editor
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# ============================================================
+# Colab / Google Drive artifacts
+# ============================================================
+drive/
+content/
+*.gdrive
+
+# ============================================================
+# Logs
+# ============================================================
+*.log
+logs/
+wandb/
+mlruns/
+runs/
+tensorboard/
+
+# ============================================================
+# Misc
+# ============================================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.cover

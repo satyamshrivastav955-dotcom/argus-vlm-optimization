@@ -1,0 +1,148 @@
+# =============================================================
+# Argus VLM Optimization — Frame Optimization Configuration
+# =============================================================
+
+frame_optimization:
+
+  # ---- General --------------------------------------------
+  input_video: null          # Set at runtime or override in notebook
+  frame_stride: 5            # Sample 1 frame every N frames (default)
+  max_frames: 100            # Maximum frames to process in a single run
+
+  # ---- Frame-Level Gating ---------------------------------
+  # Frame gate uses cheap pixel-level change detection to decide
+  # whether to invoke the VLM on the current frame.
+  frame_gate:
+    enabled: true
+
+    # Change detection method
+    method: "mad"            # options: mad | ssim | optical_flow
+    # mad = Mean Absolute Difference (grayscale normalized)
+    # ssim = Structural Similarity Index (slower but perceptually motivated)
+    # optical_flow = Future extension — not implemented in v0.1
+
+    # Threshold sweep — benchmark multiple values
+    # A threshold of 0.0 = process every frame
+    # A threshold of 1.0 = skip almost everything
+    threshold_sweep: [0.01, 0.02, 0.05, 0.10, 0.15, 0.20, 0.30]
+    default_threshold: 0.05
+
+    # Fallback: force VLM call every N frames regardless of gate decision
+    # Prevents indefinite skipping in slow drift scenarios
+    max_skip_frames: 30
+
+  # ---- Spatial Redundancy Reduction -----------------------
+  # IMPORTANT: This is NOT internal ViT-token pruning.
+  # This is pixel-level change detection -> changed-region crop -> VLM.
+  # The crop reduces redundant background content (sky, walls, etc.)
+  # before passing the image to the VLM.
+  # Label: "Spatial Redundancy Reduction / Change-Region Cropping"
+  spatial_redundancy:
+    enabled: true
+
+    # Grid patch size for change map computation
+    patch_size_sweep: [16, 32, 64]
+    default_patch_size: 32
+
+    # Per-patch change threshold (0.0–1.0 normalized)
+    change_threshold_sweep: [0.05, 0.10, 0.15, 0.20]
+    default_change_threshold: 0.10
+
+    # Padding added around detected bounding box (pixels)
+    padding_sweep: [0, 16, 32, 64]
+    default_padding: 32
+
+    # Minimum crop size as fraction of full frame
+    # If changed region is very small, fall back to full frame
+    min_crop_fraction: 0.10
+
+    # If changed area exceeds this fraction, use full frame
+    # (cropping adds no benefit if most of the frame changed)
+    max_crop_fraction: 0.80
+
+  # ---- Delta Captioning -----------------------------------
+  delta_caption:
+    enabled: true
+
+    # Prompt used for first frame / periodic full re-caption
+    full_prompt: >
+      You are a surveillance AI. Describe the complete scene in detail.
+      Include: all people, vehicles, objects, their locations, activities,
+      any hazards or unusual events. Be specific and thorough.
+
+    # Prompt template for delta/incremental captions
+    # {previous_scene} will be filled with last full scene description
+    delta_prompt_template: >
+      Previous scene description:
+      {previous_scene}
+
+      The image shows a changed region of the same scene.
+      Describe ONLY what is new, changed, moved, removed, or different
+      compared to the previous description. Do not repeat static background.
+      Focus on: new people, vehicles, actions, hazards, or events.
+
+    # Force full re-caption every N processed frames
+    full_recaption_every: 10
+
+    # Scene cut detection threshold (high difference → force full caption)
+    scene_cut_threshold: 0.40
+
+  # ---- Ablation Experiments (Part 12) ----------------------
+  ablation:
+    # E0: Full frame + FP16 KV (baseline)
+    # E1: Frame gate + FP16 KV
+    # E2: Spatial redundancy + FP16 KV
+    # E3: Delta caption + FP16 KV
+    # E4: Frame gate + spatial redundancy + FP16 KV
+    # E5: Frame gate + spatial redundancy + delta caption + FP16 KV
+    # E6: Combined pipeline + INT4 KV
+    # E7: Combined pipeline + INT2 KV (optional)
+
+    experiments:
+      E0:
+        use_frame_gate: false
+        use_spatial_reduction: false
+        use_delta_caption: false
+        kv_cache: {enabled: false, backend: "dynamic", nbits: 16}
+
+      E1:
+        use_frame_gate: true
+        use_spatial_reduction: false
+        use_delta_caption: false
+        kv_cache: {enabled: false, backend: "dynamic", nbits: 16}
+
+      E2:
+        use_frame_gate: false
+        use_spatial_reduction: true
+        use_delta_caption: false
+        kv_cache: {enabled: false, backend: "dynamic", nbits: 16}
+
+      E3:
+        use_frame_gate: false
+        use_spatial_reduction: false
+        use_delta_caption: true
+        kv_cache: {enabled: false, backend: "dynamic", nbits: 16}
+
+      E4:
+        use_frame_gate: true
+        use_spatial_reduction: true
+        use_delta_caption: false
+        kv_cache: {enabled: false, backend: "dynamic", nbits: 16}
+
+      E5:
+        use_frame_gate: true
+        use_spatial_reduction: true
+        use_delta_caption: true
+        kv_cache: {enabled: false, backend: "dynamic", nbits: 16}
+
+      E6:
+        use_frame_gate: true
+        use_spatial_reduction: true
+        use_delta_caption: true
+        kv_cache: {enabled: true, backend: "HQQ", nbits: 4}
+
+      E7:
+        use_frame_gate: true
+        use_spatial_reduction: true
+        use_delta_caption: true
+        kv_cache: {enabled: true, backend: "HQQ", nbits: 2}

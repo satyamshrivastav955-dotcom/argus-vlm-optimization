@@ -1,0 +1,64 @@
+# ============================================================
+# Argus VLM Optimization — Requirements
+# ============================================================
+# Install in Colab:
+#   !pip install -r requirements.txt
+#
+# For local GPU machines:
+#   pip install -r requirements.txt
+#
+# Note: torch must be installed FIRST with the correct CUDA index.
+# See README.md → Local Installation for CUDA-specific commands.
+# ============================================================
+
+# ---- Core deep learning -----------------------------------
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+
+# ---- Hugging Face stack -----------------------------------
+transformers>=4.45.0
+accelerate>=0.26.0
+huggingface-hub>=0.20.0
+safetensors>=0.4.0
+tokenizers>=0.15.0
+
+# ---- KV-cache quantization backends -----------------------
+# HQQ: Half-Quadratic Quantization
+hqq>=0.1.7
+
+# Quanto: Hugging Face quantization toolkit
+optimum-quanto>=0.2.0
+
+# ---- Computer vision / image processing -------------------
+Pillow>=10.0.0
+opencv-python-headless>=4.8.0
+scikit-image>=0.22.0
+
+# ---- Numerical / data ------------------------------------- 
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.11.0
+
+# ---- Metrics ----------------------------------------------
+rouge-score>=0.1.2
+nltk>=3.8.0
+
+# ---- Configuration ----------------------------------------
+pyyaml>=6.0.1
+omegaconf>=2.3.0
+
+# ---- Visualization ----------------------------------------
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# ---- Utilities --------------------------------------------
+tqdm>=4.66.0
+psutil>=5.9.0
+
+# ---- Testing ----------------------------------------------
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# ---- Optional: notebook utilities -------------------------
+ipywidgets>=8.0.0
