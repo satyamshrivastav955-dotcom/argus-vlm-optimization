@@ -347,6 +347,7 @@ with st.sidebar:
             "Long-Context Benchmark & Visualizations",
             "Single-Image vs Long-Context Analysis",
             "Argus System Architecture & Roadmap",
+            "Surveillance System Overview",
             "Verified Technical Logs & Output"
         ]
     )
@@ -946,6 +947,250 @@ In terms:
         st.json(benchmarks["system_metadata"])
         if st.checkbox("Show full benchmark JSON payload"):
             st.json(benchmarks)
+
+# =============================================================================
+# PAGE 6: Surveillance System Overview (from ai-surveillance repo)
+# =============================================================================
+elif selected_page == "Surveillance System Overview":
+    st.subheader("🛡️ Argus Full Surveillance Pipeline — System Overview")
+
+    st.markdown("""
+    <div class="recorded-disclaimer">
+    <b>Source:</b> Working production pipeline from the companion <code>ai-surveillance</code> repository.
+    All detector status, performance numbers, and configuration values below are drawn directly
+    from that codebase's <code>configs/pipeline.yaml</code>, <code>configs/vlm.yaml</code>,
+    <code>PROGRESS.md</code>, and <code>README.md</code>.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Phase progress summary ─────────────────────────────────────────────
+    st.markdown("### 📋 Project Phase Summary")
+
+    phase_rows = [
+        {"Phase": "1 — Core Detection Loop",   "Status": "✅ Complete", "Key Deliverable": "Shared YOLOv8n + ByteTrack multi-object tracking + OpenCV live display"},
+        {"Phase": "2 — Fall Detection",          "Status": "✅ Complete", "Key Deliverable": "YOLOv8n-pose keypoints + state-machine (tuned anti-FP); ONNX export → 46% overhead reduction"},
+        {"Phase": "3 — ReID + Face",             "Status": "✅ Complete", "Key Deliverable": "OSNet-x0.25 ReID + SCRFD/MobileFaceNet + identity fusion layer"},
+        {"Phase": "4 — Event Detectors",         "Status": "✅ Complete", "Key Deliverable": "Fire/smoke, phone-watching, gathering, violence (heuristic), object-left + motion prefilter"},
+        {"Phase": "5A — Pose Smoother",          "Status": "✅ Complete", "Key Deliverable": "One-Euro filter + EMA bbox + per-keypoint confidence gating"},
+        {"Phase": "5B — PAR Head",               "Status": "✅ Complete", "Key Deliverable": "Hybrid ResNet18 + HSV dominant colour + 15-frame temporal aggregator (disabled: no trained weights)"},
+        {"Phase": "5C — ROI Occupancy",          "Status": "✅ Complete", "Key Deliverable": "Polygon-gated gathering detection with wall-clock timing"},
+        {"Phase": "5D — Fight Detector + Clips", "Status": "✅ Complete", "Key Deliverable": "Skeleton velocity + proximity + oscillation signals; 5s ring-buffer MP4 clip on trigger"},
+        {"Phase": "5E — Smoking Upgrade",        "Status": "✅ Complete", "Key Deliverable": "Gesture oscillation gate + YOLO crop confirmation (cadilak/smoking-detection-yolov8)"},
+        {"Phase": "5F — Event Buffer",           "Status": "✅ Complete", "Key Deliverable": "Windowed JSON flush every 10 s; SQLite event log + keyframe storage"},
+        {"Phase": "6 — VLM Layer",              "Status": "⏳ In Progress", "Key Deliverable": "Qwen2.5-VL-3B NF4 ambient + escalated inference; query engine; Bitchat mesh alerting"},
+    ]
+    st.dataframe(pd.DataFrame(phase_rows), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+
+    # ── Detector matrix ────────────────────────────────────────────────────
+    st.markdown("### 🔍 Detector Registry")
+
+    detectors = [
+        {"Detector": "Fall (YOLOv8n-pose)",       "Signal / Method": "Pose keypoints + bbox aspect ratio + rule-based state machine",                "Status": "✅ Live-tested",  "Notes": "Tuned anti-FP; ONNX-direct runtime"},
+        {"Detector": "Fight (5D skeleton)",        "Signal / Method": "Pose-based kinematic interaction: proximity + rapid arm/body keypoint velocity",  "Status": "✅ Live-tested",  "Notes": "Oscillation gate prevents hug false positives"},
+        {"Detector": "Fire / Smoke",              "Signal / Method": "YOLOv8n fine-tuned on D-Fire (mAP50=0.754), conf=0.45, multi-frame ≥2/5",         "Status": "✅ Real model",   "Notes": "Source: rabahdev/fire-smoke-yolov8n; HSV fallback if weights missing"},
+        {"Detector": "Smoking",                   "Signal / Method": "YOLOv8n fine-tuned for cigarette/vape detection near tracked person",             "Status": "✅ Real model",   "Notes": "Source: cadilak/smoking-detection-yolov8"},
+        {"Detector": "Phone Use",                 "Signal / Method": "YOLOv8n COCO class 67, imgsz=480; confirm=3 frames / hold=15 frames hysteresis",  "Status": "✅ Stable",       "Notes": "Head-pose gate: nose below shoulder midpoint"},
+        {"Detector": "Gathering",                  "Signal / Method": "Fixed-radius centroid clustering; fires on 3+ people within 150 px",               "Status": "✅ Works",        "Notes": "10 s cooldown; no ML model needed"},
+        {"Detector": "Violence (heuristic)",       "Signal / Method": "Bbox IoU ≥ 0.3 + relative motion ≥ 40 px/frame sustained for 1.5 s",              "Status": "⚠️ Heuristic",  "Notes": "Cannot distinguish fight from hug; VLM verification resolves"},
+        {"Detector": "Object Left Behind",         "Signal / Method": "Track stationary non-person objects (bags, suitcases) for > 30 s",                  "Status": "✅ Complete",    "Notes": "COCO classes: backpack, handbag, suitcase, bottle"},
+        {"Detector": "PAR (attributes)",           "Signal / Method": "ResNet18 hybrid + HSV dominant colour + 15-frame temporal aggregator",              "Status": "⚠️ No weights", "Notes": "Disabled until PA-100K/RAP checkpoint; HSV colour works"},
+        {"Detector": "ReID (OSNet-x0.25)",        "Signal / Method": "512-dim FP16 embedding + FAISS index; match_threshold=0.65",                       "Status": "✅ Complete",    "Notes": "Runs every 15 frames to save VRAM"},
+        {"Detector": "Face (SCRFD + FaceNet)",    "Signal / Method": "SCRFD detection + MobileFaceNet embedding + FAISS face index",                      "Status": "✅ Complete",    "Notes": "Identity fusion: face > ReID priority"},
+        {"Detector": "VLM (Qwen2.5-VL-3B NF4)",  "Signal / Method": "Scene description + entity JSON; escalated on detector flags; ambient every 150 f", "Status": "✅ Live",        "Notes": "NF4 4-bit quant; ~2.3–2.5 GB VRAM; 10–15 s per pass"},
+    ]
+    st.dataframe(pd.DataFrame(detectors), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+
+    # ── Performance numbers ───────────────────────────────────────────────
+    st.markdown("### ⚡ Live Performance (RTX 4050 Laptop, 6 GB VRAM)")
+
+    perf_col1, perf_col2, perf_col3, perf_col4 = st.columns(4)
+    with perf_col1:
+        st.markdown("""
+        <div class="metric-card">
+            <div class="metric-title">Webcam FPS (No VLM)</div>
+            <div class="metric-value">~22</div>
+            <div class="metric-delta-neutral">18–25 FPS range</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with perf_col2:
+        st.markdown("""
+        <div class="metric-card">
+            <div class="metric-title">Webcam FPS (+ VLM BG)</div>
+            <div class="metric-value">~22</div>
+            <div class="metric-delta-neutral">Non-blocking thread</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with perf_col3:
+        st.markdown("""
+        <div class="metric-card">
+            <div class="metric-title">VLM Inference Time</div>
+            <div class="metric-value">~12 s</div>
+            <div class="metric-delta-neutral">10–15 s per pass (BG)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with perf_col4:
+        st.markdown("""
+        <div class="metric-card">
+            <div class="metric-title">Total VRAM (All + VLM)</div>
+            <div class="metric-value">~2.4 GB</div>
+            <div class="metric-delta-positive">▼ 40% of 6 GB budget</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # VRAM budget chart
+    st.markdown("##### VRAM Budget Breakdown (RTX 4050, 6 GB)")
+    vram_components = ["Detectors only\n(YOLO, pose, ReID, face)", "Qwen2.5-VL-3B NF4\n(VLM)", "Remaining\nheadroom"]
+    vram_values = [0.085, 2.35, 3.565]
+    vram_colors = ["#38BDF8", "#00DC82", "#1E293B"]
+
+    fig_vram = go.Figure(go.Bar(
+        x=vram_components,
+        y=vram_values,
+        marker_color=vram_colors,
+        text=[f"{v:.2f} GB" for v in vram_values],
+        textposition="auto",
+    ))
+    fig_vram.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(15,23,42,0.6)",
+        yaxis_title="VRAM (GB)",
+        yaxis=dict(range=[0, 6.2]),
+        margin=dict(l=40, r=20, t=30, b=50),
+        height=320,
+        annotations=[
+            dict(x=2, y=5.9, text="6 GB Budget", showarrow=False,
+                 font=dict(color="#F87171", size=12))
+        ],
+        shapes=[
+            dict(type="line", x0=-0.5, x1=2.5, y0=6.0, y1=6.0,
+                 line=dict(color="#F87171", width=2, dash="dash"))
+        ]
+    )
+    st.plotly_chart(fig_vram, use_container_width=True)
+
+    st.markdown("---")
+
+    # ── FrameRouter scheduling ────────────────────────────────────────────
+    st.markdown("### ⏱️ FrameRouter Stage Scheduling (configs/pipeline.yaml)")
+    st.caption("The FrameRouter determines how often each pipeline stage runs, ensuring heavy stages don't block the main 30 FPS capture loop.")
+
+    router_stages = [
+        {"Stage": "detect",        "Runs every N frames": 1,  "Effective rate @ 30fps": "30 Hz",  "Notes": "Every frame — feeds all downstream stages"},
+        {"Stage": "track",         "Runs every N frames": 1,  "Effective rate @ 30fps": "30 Hz",  "Notes": "ByteTrack is CPU-cheap"},
+        {"Stage": "pose",          "Runs every N frames": 3,  "Effective rate @ 30fps": "10 Hz",  "Notes": "ONNX-direct; 17% overhead reduction vs every-2"},
+        {"Stage": "violence",      "Runs every N frames": 3,  "Effective rate @ 30fps": "10 Hz",  "Notes": "Needs temporal continuity; cheaper than pose"},
+        {"Stage": "fight",         "Runs every N frames": 3,  "Effective rate @ 30fps": "10 Hz",  "Notes": "Same cadence as violence — skeleton-based"},
+        {"Stage": "face",          "Runs every N frames": 8,  "Effective rate @ 30fps": "3.75 Hz","Notes": "buffalo_s = 5 ONNX models; biggest FPS driver"},
+        {"Stage": "smoking",       "Runs every N frames": 10, "Effective rate @ 30fps": "3 Hz",   "Notes": "Low urgency event"},
+        {"Stage": "phone",         "Runs every N frames": 10, "Effective rate @ 30fps": "3 Hz",   "Notes": "Dedicated YOLO instance (COCO cls 67)"},
+        {"Stage": "par",           "Runs every N frames": 10, "Effective rate @ 30fps": "3 Hz",   "Notes": "Pedestrian attribute recognition on crops"},
+        {"Stage": "reid",          "Runs every N frames": 15, "Effective rate @ 30fps": "2 Hz",   "Notes": "Only needed on new/re-appearing tracks"},
+        {"Stage": "fire_smoke",    "Runs every N frames": 15, "Effective rate @ 30fps": "2 Hz",   "Notes": "Slow-evolving event"},
+        {"Stage": "gathering",     "Runs every N frames": 30, "Effective rate @ 30fps": "1 Hz",   "Notes": "Aggregate statistic"},
+        {"Stage": "object_left",   "Runs every N frames": 30, "Effective rate @ 30fps": "1 Hz",   "Notes": "Track stationary non-person objects"},
+        {"Stage": "vlm_escalated", "Runs every N frames": 1,  "Effective rate @ 30fps": "On-demand","Notes": "Triggered when detector flags high priority"},
+    ]
+    st.dataframe(pd.DataFrame(router_stages), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+
+    # ── VLM Layer architecture ────────────────────────────────────────────
+    st.markdown("### 🧠 Phase 6: VLM Integration Layer")
+
+    col_vlm1, col_vlm2 = st.columns(2)
+
+    with col_vlm1:
+        st.markdown("##### VLM Model Configuration")
+        st.code("""
+# configs/vlm.yaml (key fields)
+model:
+  name: "Qwen/Qwen2.5-VL-3B-Instruct"  # 3B, 7.1 GB on disk
+  device: "cuda:0"
+  quantization: "nf4"         # bitsandbytes 4-bit NF4
+  max_vram_gb: 3.5            # hard ceiling; load aborts if exceeded
+  max_pixels: 602112          # reduced for VRAM; was 1003520
+
+escalated:
+  max_tokens: 256
+  context_window_frames: 15   # frames of context per escalated pass
+
+escalation:
+  forced_full_fidelity_interval: 150  # frames (every ~5s at 30 FPS)
+
+integration:
+  log_vlm_events: true
+  vlm_event_db_table: "vlm_events"    # stored in events.db
+        """, language="yaml")
+
+    with col_vlm2:
+        st.markdown("##### VLM Module Responsibilities")
+        vlm_modules = [
+            {"Module": "vlm/core.py (VLMCore)",          "Role": "Qwen2.5-VL-3B NF4 loader; dual-pass inference (SCENE + ENTITY prompts); multi-frame buffer"},
+            {"Module": "vlm/__init__.py (VLMIntegration)","Role": "Lifecycle management; escalation routing; SQLite persistence; single model instance shared"},
+            {"Module": "vlm/escalation.py",              "Role": "Escalation scoring from detector event priority; threshold gating"},
+            {"Module": "vlm/query_engine.py",            "Role": "Natural language query against vlm_events table; shares loaded model (no second load)"},
+            {"Module": "vlm/kv_cache.py",               "Role": "Tiered KV cache spec: Hot (VRAM) / Warm (RAM, quantized) / Cold (SQLite) — architectural design"},
+            {"Module": "vlm/token_pruning.py",          "Role": "ZSPAPrune-style prompt-aware token pruning; person-token boost; diversity-relevance balance"},
+            {"Module": "vlm/temporal_merge.py",         "Role": "Multi-frame entity merging across consecutive VLM passes"},
+            {"Module": "core/bitchat.py",               "Role": "Bitchat mesh alert client: HTTP REST, background queue, image + text push to Android"},
+        ]
+        st.dataframe(pd.DataFrame(vlm_modules), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+
+    # ── Connection to VLM optimization research ───────────────────────────
+    st.markdown("### 🔗 Connection to This Repository's VLM Optimization Research")
+
+    st.markdown("""
+    <div class="finding-alert">
+    <b>How the two repositories connect:</b><br><br>
+    The <b>ai-surveillance</b> system runs Qwen2.5-VL-3B in production (live webcam, NF4 4-bit quantization).
+    This confirms the real-world deployment pressure that motivates the KV cache optimization research in this repository:<br><br>
+    &bull; The live system shows VLM inference takes <b>10–15 s per escalated pass</b> on an RTX 4050 (6 GB VRAM).<br>
+    &bull; Without token pruning, accumulating video context across hundreds of frames would exhaust VRAM and make real-time operation impossible.<br>
+    &bull; The <b>Temporal Token Pruning</b> technique validated in this notebook (39.9% visual token reduction, 1.82× faster prefill)
+       is the proposed solution to this exact production bottleneck.<br>
+    &bull; The <b>Tiered KV Cache</b> architecture (Hot/Warm/Cold) in <code>vlm/kv_cache.py</code> is the design target for enabling
+       infinite-streaming surveillance without VRAM overflow.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Integration roadmap chart
+    st.markdown("##### Integration Roadmap: Research → Production")
+
+    roadmap = [
+        {"Step": "✅ Done",      "Item": "Validated temporal token pruning",       "Impact": "39.9% visual token reduction, 1.82× faster prefill"},
+        {"Step": "✅ Done",      "Item": "Validated KV cache quantization (INT8)",  "Impact": "1.459 GB peak VRAM savings on 100-frame context"},
+        {"Step": "⏳ Next",     "Item": "Port token pruning into vlm/token_pruning.py", "Impact": "Reduces per-escalation VRAM in live pipeline"},
+        {"Step": "⏳ Next",     "Item": "Activate Hot/Warm/Cold KV tier (vlm/kv_cache.py)", "Impact": "Enables infinite-streaming without VRAM overflow"},
+        {"Step": "🗺️ Roadmap", "Item": "Natural language query engine over event history", "Impact": "Operator can ask: 'Who entered after 14:00?'"},
+        {"Step": "🗺️ Roadmap", "Item": "Hybrid Graph Memory (NetworkX/Neo4j + vector DB)", "Impact": "Spatio-temporal scene relations over hours/days"},
+    ]
+    st.dataframe(pd.DataFrame(roadmap), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+
+    # ── Bitchat alerting ──────────────────────────────────────────────────
+    st.markdown("### 📡 Bitchat Mesh Alert System")
+    st.caption("Every surveillance alert and VLM scene description is pushed to an Android phone via Bitchat's mesh network in real time.")
+
+    alert_rows = [
+        {"Event": "🔥 Fire / Smoke",   "Bitchat Message": "[FIRE] 15:42:10 — Fire detected in camera view",    "Priority": "🔴 Immediate (bypasses rate limiter)"},
+        {"Event": "🧎 Person Falls",   "Bitchat Message": "[FALL] 15:43:22 — Person id:1 has fallen",           "Priority": "🔴 Immediate"},
+        {"Event": "👊 Fight",          "Bitchat Message": "[FIGHT] 15:44:01 — Fight between persons detected",   "Priority": "🔴 Immediate"},
+        {"Event": "📱 Phone Use",      "Bitchat Message": "[PHONE] 15:45:00 — Person id:1 using phone",          "Priority": "🟡 Rate-limited (5.5 s)"},
+        {"Event": "👥 Crowd",          "Bitchat Message": "[GATHERING] 15:46:10 — 4 people gathered",            "Priority": "🟡 Rate-limited"},
+        {"Event": "🎥 VLM Scene",      "Bitchat Message": "[CAM] A man is sitting at a desk… (+ keyframe image)","Priority": "🟢 Ambient (every 150 frames)"},
+    ]
+    st.dataframe(pd.DataFrame(alert_rows), use_container_width=True, hide_index=True)
+
 
 # -----------------------------------------------------------------------------
 # Footer
