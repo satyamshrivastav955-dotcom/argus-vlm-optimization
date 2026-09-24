@@ -429,13 +429,13 @@ st.markdown("""
 # =============================================================================
 if selected_page == "Interactive Surveillance Demo":
     st.subheader("📹 Video Analysis & Optimization Pipeline")
-    
+
     col_video, col_controls = st.columns([1.1, 1], gap="medium")
-    
+
     with col_video:
         st.markdown("##### Input Video Feed")
         sample_video_path = Path("sample_data/sample_surveillance.mp4")
-        
+
         if video_source == "Upload Video File (.mp4)" and uploaded_file is not None:
             st.video(uploaded_file)
             st.caption(f"Custom file loaded: **{uploaded_file.name}** ({uploaded_file.size // 1024} KB)")
@@ -443,19 +443,19 @@ if selected_page == "Interactive Surveillance Demo":
             if not sample_video_path.exists():
                 try:
                     import subprocess
-                    import sys
-                    subprocess.run([sys.executable, "scripts/generate_sample_video.py"], check=True)
-                except Exception as e:
-                    st.warning(f"Could not auto-generate sample video: {e}")
+                    import sys as _sys
+                    subprocess.run([_sys.executable, "scripts/generate_sample_video.py"], check=True)
+                except Exception as _e:
+                    st.warning(f"Could not auto-generate sample video: {_e}")
             if sample_video_path.exists():
                 st.video(str(sample_video_path))
-                st.caption("Surveillance Test Clip: `sample_data/sample_surveillance.mp4` (Simulated North Corridor, 640x480)")
+                st.caption("Surveillance Test Clip: `sample_data/sample_surveillance.mp4`")
             else:
                 st.info("No video loaded. Upload a video file or generate a sample video.")
 
     with col_controls:
         st.markdown("##### Active Configuration")
-        
+
         cfg_selected = "pruned_quantized_int8"
         if not enable_temporal_pruning:
             cfg_selected = "unpruned_dynamic_fp16"
@@ -463,156 +463,296 @@ if selected_page == "Interactive Surveillance Demo":
             cfg_selected = "pruned_dynamic_fp16"
         else:
             cfg_selected = "pruned_quantized_int8"
-            
+
         st.markdown(f"""
-        - **Pipeline Mode**: `{'Temporal Pruning + ' + kv_quant if enable_temporal_pruning else 'Unpruned Baseline'}`
+        - **Pipeline Mode**: `{("Temporal Pruning + " + kv_quant) if enable_temporal_pruning else "Unpruned Baseline"}`
         - **Target Model**: `Qwen/Qwen2.5-VL-3B-Instruct`
-        - **Context Frame Window**: 100 frames spanning 120.3 seconds
-        - **Pruning Threshold**: `cos_sim >= {pruning_threshold if enable_temporal_pruning else 'N/A'}`
+        - **Pruning Threshold**: `cos_sim >= {pruning_threshold if enable_temporal_pruning else "N/A"}`
         - **Min Token Retention**: `{min_keep_ratio * 100:.0f}%`
         """)
-        
+
+        if execution_mode == "Live / Experimental Mode":
+            import torch as _torch_check
+            if _torch_check.cuda.is_available():
+                _gn = _torch_check.cuda.get_device_name(0)
+                _vm = _torch_check.cuda.get_device_properties(0).total_memory / (1024**3)
+                st.success(f"✅ GPU: **{_gn}** ({_vm:.1f} GB VRAM) — Live inference ready")
+            else:
+                st.warning("⚠️ No CUDA GPU detected — pipeline will run on CPU (very slow)")
+
         run_btn = st.button("▶ Run Surveillance VLM Analysis", type="primary", use_container_width=True)
-        
+
         if run_btn:
             if execution_mode == "Demo Mode (Recorded Benchmark)":
-                progress_bar = st.progress(0, text="Initializing Qwen2.5-VL vision pipeline...")
+                _pb = st.progress(0, text="Initializing Qwen2.5-VL vision pipeline...")
                 time.sleep(0.3)
-                progress_bar.progress(25, text="Sampling 100 frames across 120.3s temporal window...")
+                _pb.progress(25, text="Sampling 100 frames across 120.3s temporal window...")
                 time.sleep(0.4)
                 if enable_temporal_pruning:
-                    progress_bar.progress(55, text="Calculating patch cosine similarity & pruning static tokens (39.9% pruned)...")
+                    _pb.progress(55, text="Calculating patch cosine similarity & pruning static tokens (39.9% pruned)...")
                     time.sleep(0.4)
                 else:
-                    progress_bar.progress(55, text="Extracting full visual tokens (no pruning applied)...")
+                    _pb.progress(55, text="Extracting full visual tokens (no pruning applied)...")
                     time.sleep(0.4)
-                progress_bar.progress(80, text=f"Ingesting into {kv_quant} KV Cache & RoPE 3D position alignment...")
+                _pb.progress(80, text=f"Ingesting into {kv_quant} KV Cache & RoPE 3D position alignment...")
                 time.sleep(0.3)
-                progress_bar.progress(100, text="Inference complete! Displaying recorded benchmark metrics.")
-                st.session_state['analysis_done'] = True
+                _pb.progress(100, text="Inference complete! Displaying recorded benchmark metrics.")
+                st.session_state["analysis_done"] = True
+                st.session_state["live_result"] = None
+
             else:
-                # Live mode attempt
-                st.warning("Live Inference Mode selected: Checking local GPU and model availability...")
-                try:
-                    import torch
-                    if not torch.cuda.is_available():
-                        st.error("No CUDA GPU detected on this local machine. Automatic fallback to verified recorded benchmark mode.")
-                        st.session_state['analysis_done'] = True
-                    else:
-                        st.info(f"CUDA detected: {torch.cuda.get_device_name(0)}. To avoid out-of-memory or multi-minute downloads during demo, displaying recorded benchmark results.")
-                        st.session_state['analysis_done'] = True
-                except Exception as e:
-                    st.error(f"Error checking CUDA environment: {e}. Falling back to recorded benchmark mode.")
-                    st.session_state['analysis_done'] = True
-                    
-    # Display Results Section
-    if st.session_state.get('analysis_done', True):
+                # ── REAL LIVE INFERENCE ─────────────────────────────────
+                import sys as _sys_live
+                import tempfile as _tf
+                import os as _os
+
+                _src_path = str(Path("src").absolute())
+                if _src_path not in _sys_live.path:
+                    _sys_live.path.insert(0, _src_path)
+
+                # Resolve video path
+                _video_tmp = None
+                if uploaded_file is not None:
+                    _suf = Path(uploaded_file.name).suffix or ".mp4"
+                    _tmp = _tf.NamedTemporaryFile(delete=False, suffix=_suf)
+                    _tmp.write(uploaded_file.read())
+                    _tmp.close()
+                    _video_tmp = _tmp.name
+                elif sample_video_path.exists():
+                    _video_tmp = str(sample_video_path)
+
+                if _video_tmp is None:
+                    st.error("No video source available. Upload a video or generate the sample video first.")
+                else:
+                    from src.pipeline.live_inference import run_live_pipeline as _run_pipeline
+
+                    _pb = st.progress(0, text="Starting pipeline…")
+                    _status_txt = st.empty()
+
+                    def _cb(msg, pct):
+                        _pb.progress(pct, text=msg)
+                        _status_txt.caption(f"⚙️ {msg}")
+
+                    try:
+                        _result = _run_pipeline(
+                            video_path=_video_tmp,
+                            max_frames=20,
+                            pruning_threshold=pruning_threshold,
+                            min_keep_ratio=min_keep_ratio,
+                            kv_mode=kv_quant,
+                            vlm_max_frames=3,
+                            progress_callback=_cb,
+                        )
+                        st.session_state["live_result"] = _result
+                        st.session_state["analysis_done"] = True
+                        _status_txt.empty()
+
+                    except Exception as _err:
+                        import traceback as _tb
+                        st.error(f"Pipeline error: {_err}")
+                        st.code(_tb.format_exc(), language="text")
+                    finally:
+                        if uploaded_file is not None and _video_tmp and _os.path.exists(_video_tmp):
+                            try:
+                                _os.unlink(_video_tmp)
+                            except Exception:
+                                pass
+
+    # ── Results Display ──────────────────────────────────────────────────────
+    if st.session_state.get("analysis_done", True):
         st.markdown("---")
-        st.markdown("### 📊 Benchmark Metrics for Active Configuration")
-        
-        st.markdown("""
-        <div class="recorded-disclaimer">
-        ℹ️ <b>Recorded benchmark from current experiment</b> (NVIDIA Tesla T4, Qwen2.5-VL-3B-Instruct, 100 frames spanning 120.3s video).
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Pull matching config
-        active_res = next((c for c in long_cfg if c["config_id"] == cfg_selected), long_cfg[1])
-        base_res = long_cfg[0]
-        
-        m1, m2, m3, m4, m5 = st.columns(5)
-        
-        with m1:
+
+        _live = st.session_state.get("live_result", None)
+
+        if _live is not None and execution_mode == "Live / Experimental Mode":
+            # ─── LIVE RESULTS ──────────────────────────────────────────────
+            st.markdown("### 🔴 Live Inference Results")
+            st.markdown(f"""
+            <div class="recorded-disclaimer">
+            <b>Real inference complete</b> on <b>{_live.gpu_name}</b> &mdash;
+            {_live.sampled_frame_count} frames sampled from {_live.video_duration_s:.1f}s video,
+            {_live.processed_frame_count} kept after temporal pruning.
+            </div>
+            """, unsafe_allow_html=True)
+
+            _m1, _m2, _m3, _m4, _m5 = st.columns(5)
+            with _m1:
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-title">Frames Sampled</div>
+                    <div class="metric-value">{_live.sampled_frame_count}</div>
+                    <div class="metric-delta-neutral">{_live.video_duration_s:.1f}s video</div>
+                </div>""", unsafe_allow_html=True)
+            with _m2:
+                _tok_b = _live.total_visual_tokens_before_pruning
+                _tok_a = _live.total_visual_tokens_after_pruning
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-title">Visual Tokens</div>
+                    <div class="metric-value">{_tok_a:,}</div>
+                    <div class="metric-delta-positive">&#9660; {_live.token_reduction_pct:.1f}% reduction</div>
+                </div>""", unsafe_allow_html=True)
+            with _m3:
+                _n_det = sum(_live.detection_summary.values())
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-title">Objects Detected</div>
+                    <div class="metric-value">{_n_det}</div>
+                    <div class="metric-delta-neutral">{len(_live.detection_summary)} class(es)</div>
+                </div>""", unsafe_allow_html=True)
+            with _m4:
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-title">Peak VRAM</div>
+                    <div class="metric-value">{_live.peak_vram_gb:.2f} <span style="font-size:1rem;color:#94A3B8;">GB</span></div>
+                    <div class="metric-delta-positive">Live measurement</div>
+                </div>""", unsafe_allow_html=True)
+            with _m5:
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-title">VLM Inference</div>
+                    <div class="metric-value">{_live.vlm_time_s:.1f} <span style="font-size:1rem;color:#94A3B8;">s</span></div>
+                    <div class="metric-delta-neutral">{len(_live.vlm_outputs)} frame(s)</div>
+                </div>""", unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # Alerts
+            st.markdown("### 🚨 Security Alert Events")
+            for _alert in _live.alert_events:
+                if any(k in _alert for k in ("GATHERING", "PHONE", "OBJECT")):
+                    st.warning(_alert)
+                elif any(k in _alert for k in ("PERSON", "VEHICLE")):
+                    st.info(_alert)
+                else:
+                    st.success(_alert)
+
+            # Detection summary
+            if _live.detection_summary:
+                st.markdown("### 📊 Detection Summary")
+                _det_rows = [
+                    {"Object Class": k, "Count": v,
+                     "Security Relevance":
+                         "🔴 HIGH" if k == "person" else
+                         "🟡 MEDIUM" if k in ("car", "truck", "bus", "cell phone") else
+                         "🟠 WATCH" if k in ("backpack", "handbag", "suitcase") else "🟢 LOW"}
+                    for k, v in sorted(_live.detection_summary.items(), key=lambda x: -x[1])
+                ]
+                st.dataframe(pd.DataFrame(_det_rows), use_container_width=True, hide_index=True)
+
+            # Frame gallery
+            st.markdown("### 🖼️ Annotated Frame Gallery (YOLOv8n Detections)")
+            _gallery = [fr for fr in _live.frame_results if fr.pil_image is not None and not fr.was_pruned][:8]
+            if _gallery:
+                _gcols = st.columns(min(4, len(_gallery)))
+                for _ci, _fr in enumerate(_gallery):
+                    with _gcols[_ci % 4]:
+                        _det_labels = list({d.label for d in _fr.detections})
+                        _cap = f"t={_fr.timestamp_s:.1f}s | " + (", ".join(_det_labels) if _det_labels else "no detections")
+                        st.image(_fr.pil_image, caption=_cap, use_container_width=True)
+
+            # VLM outputs
+            st.markdown("### 🧠 VLM Semantic Scene Descriptions (Qwen2.5-VL-3B)")
+            st.caption("Qualitative semantic output is provided to inspect whether useful scene information is retained.")
+            for _vi, _vo in enumerate(_live.vlm_outputs):
+                with st.expander(
+                    f"📝 Frame {_vi+1} — {_vo.input_tokens} input tokens | "
+                    f"{_vo.latency_s:.1f}s latency | {_vo.peak_vram_gb:.2f} GB VRAM",
+                    expanded=(_vi == 0),
+                ):
+                    if _vo.status == "ok" and _vo.scene_description:
+                        st.markdown(_vo.scene_description)
+                    elif _vo.status == "oom":
+                        st.error(f"⚠️ Out of GPU Memory: {_vo.error}")
+                    else:
+                        st.error(f"VLM failed ({_vo.status}): {_vo.error}")
+
+            # Timing
+            st.markdown("### ⏱️ Timing Breakdown")
+            _other_time = max(0.0, _live.total_wall_time_s - _live.yolo_time_s - _live.vlm_time_s)
+            st.dataframe(pd.DataFrame({
+                "Stage": ["Frame Extraction & YOLO Detection", "Temporal Token Pruning + Overhead", "Qwen2.5-VL-3B Inference", "Total Pipeline"],
+                "Time (s)": [round(_live.yolo_time_s, 2), round(_other_time, 2), round(_live.vlm_time_s, 2), round(_live.total_wall_time_s, 2)],
+            }), use_container_width=True, hide_index=True)
+
+        else:
+            # ─── DEMO MODE (verified benchmark) ────────────────────────────
+            st.markdown("### 📊 Benchmark Metrics for Active Configuration")
             st.markdown("""
-            <div class="metric-card">
-                <div class="metric-title">Frames Processed</div>
-                <div class="metric-value">100</div>
-                <div class="metric-delta-neutral">120.3s Video Coverage</div>
+            <div class="recorded-disclaimer">
+            &#9432; <b>Recorded benchmark from current experiment</b> (NVIDIA Tesla T4, Qwen2.5-VL-3B-Instruct, 100 frames spanning 120.3s video).
             </div>
             """, unsafe_allow_html=True)
-            
-        with m2:
+
+            active_res = next((c for c in long_cfg if c["config_id"] == cfg_selected), long_cfg[1])
+
+            m1, m2, m3, m4, m5 = st.columns(5)
+            with m1:
+                st.markdown("""<div class="metric-card">
+                    <div class="metric-title">Frames Processed</div>
+                    <div class="metric-value">100</div>
+                    <div class="metric-delta-neutral">120.3s Video Coverage</div>
+                </div>""", unsafe_allow_html=True)
+            with m2:
+                _cls2 = "positive" if active_res["visual_tokens"] < 39100 else "neutral"
+                _lbl2 = "&#9660; -39.9% (from 39,100)" if active_res["visual_tokens"] < 39100 else "Baseline (100%)"
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-title">Visual Tokens</div>
+                    <div class="metric-value">{active_res["visual_tokens"]:,}</div>
+                    <div class="metric-delta-{_cls2}">{_lbl2}</div>
+                </div>""", unsafe_allow_html=True)
+            with m3:
+                _cls3 = "positive" if active_res["final_tokens"] < 44200 else "neutral"
+                _lbl3 = "&#9660; -35.3% Total Tokens" if active_res["final_tokens"] < 44200 else "Baseline (44,200)"
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-title">Total Context Tokens</div>
+                    <div class="metric-value">{active_res["final_tokens"]:,}</div>
+                    <div class="metric-delta-{_cls3}">{_lbl3}</div>
+                </div>""", unsafe_allow_html=True)
+            with m4:
+                _cls4 = "positive" if active_res["vram_saved_gb"] > 0 else "neutral"
+                _lbl4 = f"&#9660; -{active_res['vram_saved_gb']:.3f} GB saved" if active_res["vram_saved_gb"] > 0 else "Baseline Peak"
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-title">Peak GPU VRAM</div>
+                    <div class="metric-value">{active_res["peak_vram_gb"]:.2f} <span style="font-size:1rem;color:#94A3B8;">GB</span></div>
+                    <div class="metric-delta-{_cls4}">{_lbl4}</div>
+                </div>""", unsafe_allow_html=True)
+            with m5:
+                _spd = active_res["speedup_vs_baseline"]
+                _cls5 = "positive" if _spd > 1.0 else "neutral"
+                _lbl5 = f"&#9650; {_spd:.2f}x Speedup" if _spd > 1.0 else (f"&#9660; {_spd:.2f}x (Quant overhead)" if _spd < 1.0 else "Baseline (60.43s)")
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-title">Prefill Latency</div>
+                    <div class="metric-value">{active_res["prefill_latency_seconds"]:.2f} <span style="font-size:1rem;color:#94A3B8;">s</span></div>
+                    <div class="metric-delta-{_cls5}">{_lbl5}</div>
+                </div>""", unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("##### &#128269; Side-by-Side Experimental Comparison")
+            _rows = []
+            for c in long_cfg:
+                _rows.append({
+                    "Configuration": c["display_name"],
+                    "Visual Tokens": f"{c['visual_tokens']:,}",
+                    "Final Context Tokens": f"{c['final_tokens']:,}",
+                    "Token Reduction (%)": f"{100 * (1 - c['final_tokens']/44200):.1f}%",
+                    "Peak VRAM": f"{c['peak_vram_gb']:.2f} GB",
+                    "VRAM Saved": f"+{c['vram_saved_gb']:.3f} GB ({100*c['vram_saved_gb']/10.91:.1f}%)" if c["vram_saved_gb"] > 0 else "Baseline",
+                    "Prefill Latency": f"{c['prefill_latency_seconds']:.2f} s",
+                    "Speedup": f"{c['speedup_vs_baseline']:.2f}x",
+                })
+            st.dataframe(pd.DataFrame(_rows), use_container_width=True, hide_index=True)
+
+            st.markdown("""<div class="finding-alert">
+                <b>&#128273; Key Empirical Findings from Benchmark:</b><br>
+                &bull; <b>Temporal Pruning alone (FP16)</b> delivers <b>1.82x faster prefill</b> (33.14s vs 60.43s) and saves ~1.0 GB VRAM by cutting quadratic attention over static background tokens.<br>
+                &bull; <b>Temporal Pruning + INT8 Quantization</b> achieves the <b>highest memory reduction: 1.459 GB (13.4% of total baseline)</b>, bringing peak VRAM down to 9.45 GB.<br>
+                &bull; <i>Engineering note:</i> INT8 prefill latency is <b>78.06s</b> (slower than baseline FP16) due to dequantization overhead on the T4 GPU during prefill accumulation.
+            </div>""", unsafe_allow_html=True)
+
+            st.markdown("##### &#128221; Generated Semantic Output (Conditioned on 100-Frame Context)")
+            st.caption("Qualitative semantic output is provided to inspect whether useful scene information is retained.")
             st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">Visual Tokens</div>
-                <div class="metric-value">{active_res['visual_tokens']:,}</div>
-                <div class="metric-delta-{'positive' if active_res['visual_tokens'] < 39100 else 'neutral'}">
-                    {'▼ -39.9% (from 39,100)' if active_res['visual_tokens'] < 39100 else 'Baseline (100%)'}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with m3:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">Total Context Tokens</div>
-                <div class="metric-value">{active_res['final_tokens']:,}</div>
-                <div class="metric-delta-{'positive' if active_res['final_tokens'] < 44200 else 'neutral'}">
-                    {'▼ -35.3% Total Tokens' if active_res['final_tokens'] < 44200 else 'Baseline (44,200)'}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with m4:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">Peak GPU VRAM</div>
-                <div class="metric-value">{active_res['peak_vram_gb']:.2f} <span style="font-size:1rem;color:#94A3B8;">GB</span></div>
-                <div class="metric-delta-{'positive' if active_res['vram_saved_gb'] > 0 else 'neutral'}">
-                    {f"▼ -{active_res['vram_saved_gb']:.3f} GB saved" if active_res['vram_saved_gb'] > 0 else "Baseline Peak"}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with m5:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">Prefill Latency</div>
-                <div class="metric-value">{active_res['prefill_latency_seconds']:.2f} <span style="font-size:1rem;color:#94A3B8;">s</span></div>
-                <div class="metric-delta-{'positive' if active_res['speedup_vs_baseline'] > 1.0 else 'neutral'}">
-                    {f"▲ {active_res['speedup_vs_baseline']:.2f}x Speedup" if active_res['speedup_vs_baseline'] > 1.0 else (f"▼ {active_res['speedup_vs_baseline']:.2f}x (Quant overhead)" if active_res['speedup_vs_baseline'] < 1.0 else "Baseline (60.43s)")}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Side-by-side comparison table
-        st.markdown("##### 🔍 Side-by-Side Experimental Comparison")
-        table_rows = []
-        for c in long_cfg:
-            table_rows.append({
-                "Configuration": c["display_name"],
-                "Visual Tokens": f"{c['visual_tokens']:,}",
-                "Final Context Tokens": f"{c['final_tokens']:,}",
-                "Token Reduction (%)": f"{100 * (1 - c['final_tokens']/44200):.1f}%",
-                "Peak VRAM": f"{c['peak_vram_gb']:.2f} GB",
-                "VRAM Saved": f"+{c['vram_saved_gb']:.3f} GB ({100*c['vram_saved_gb']/10.91:.1f}%)" if c['vram_saved_gb'] > 0 else "Baseline",
-                "Prefill Latency": f"{c['prefill_latency_seconds']:.2f} s",
-                "Speedup": f"{c['speedup_vs_baseline']:.2f}x"
-            })
-        df_comparison = pd.DataFrame(table_rows)
-        st.dataframe(df_comparison, use_container_width=True, hide_index=True)
-
-        # Critical Engineering Insight Callout
-        st.markdown("""
-        <div class="finding-alert">
-            <b>🔑 Key Empirical Findings from Benchmark:</b><br>
-            • <b>Temporal Pruning alone (FP16)</b> delivers <b>1.82x faster prefill</b> (33.14s vs 60.43s) and saves ~1.0 GB VRAM by cutting quadratic attention over static background tokens.<br>
-            • <b>Temporal Pruning + INT8 Quantization</b> achieves the <b>highest memory reduction: 1.459 GB (13.4% of total baseline)</b>, bringing peak VRAM down to 9.45 GB.<br>
-            • <i>Engineering note:</i> INT8 prefill latency is <b>78.06s</b> (slower than baseline FP16) due to dequantization overhead on the T4 GPU during prefill accumulation. INT8 is optimal for VRAM-constrained deployments, whereas Pruned FP16 is optimal for latency.
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Semantic Generated Output
-        st.markdown("##### 📝 Generated Semantic Output (Conditioned on 100-Frame Context)")
-        st.caption("Qualitative semantic output is provided to inspect whether useful scene information is retained.")
-        st.markdown(f"""
-        ```markdown
-        [VLM Output from {active_res['display_name']}]:
-        {active_res.get('generated_text', 'Scene processed successfully.')}
-        ```
-        """)
+```markdown
+[VLM Output from {active_res["display_name"]}]:
+{active_res.get("generated_text", "Scene processed successfully.")}
+```
+""")
 
 
 # =============================================================================
