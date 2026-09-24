@@ -1,0 +1,844 @@
+{
+  "system_metadata": {
+    "model": "Qwen/Qwen2.5-VL-3B-Instruct",
+    "tested_hardware": "NVIDIA Tesla T4 (15.36 GB VRAM, Google Colab)",
+    "precision": "torch.float16",
+    "transformers_version": "4.57.2",
+    "quantization_backend": "HQQ (Half-Quadratic Quantization)",
+    "video_duration_seconds": 120.3,
+    "video_total_frames": 3610,
+    "video_fps": 30.0,
+    "sampled_frames": 100,
+    "pruning_threshold_cosine": 0.98,
+    "min_keep_ratio": 0.05
+  },
+  "long_context_benchmark": {
+    "configurations": [
+      {
+        "config_id": "unpruned_dynamic_fp16",
+        "display_name": "Unpruned Baseline (FP16 Dynamic)",
+        "description": "Full visual tokens, standard DynamicCache FP16",
+        "final_tokens": 44200,
+        "visual_tokens": 39100,
+        "peak_vram_gb": 10.91,
+        "prefill_latency_seconds": 60.43,
+        "speedup_vs_baseline": 1.0,
+        "vram_saved_gb": 0.0,
+        "vram_saved_pct": 0.0,
+        "token_reduction_pct": 0.0,
+        "generated_text": "The image shows a section of an outdoor wall with some greenery in the background. The wall appears to be made of concrete and has patches where moss or algae have grown, indicating it might not receive much sunlight for extended periods.\n\nIn terms:\n- **Objects**: Wall (concrete), Greenery\n  - No people visible.\n\nAction:\nNo specific actions are taking place on this particular segment shown here as per surveillance system's perspective\n\nUnusual Elements:\n1) Moss/Algae Growth \u2014 This indicates that there is limited exposure time under direct sun which could suggest either shade from nearby"
+      },
+      {
+        "config_id": "pruned_dynamic_fp16",
+        "display_name": "Temporal Pruning + FP16 Dynamic",
+        "description": "Cosine similarity pruning (threshold=0.98), DynamicCache FP16",
+        "final_tokens": 28605,
+        "visual_tokens": 23505,
+        "peak_vram_gb": 9.91,
+        "prefill_latency_seconds": 33.14,
+        "speedup_vs_baseline": 1.82,
+        "vram_saved_gb": 0.997,
+        "vram_saved_pct": 9.14,
+        "token_reduction_pct": 35.28,
+        "visual_token_reduction_pct": 39.88,
+        "generated_text": "The image shows a section of an outdoor wall with some greenery in the background. The wall appears to be made of concrete and has patches where moss or algae have grown, indicating it might not receive much sunlight.\n\nIn terms:\n- **Objects**: Wall (concrete), vegetation.\n  - No people visible on this segment"
+      },
+      {
+        "config_id": "pruned_quantized_int8",
+        "display_name": "Temporal Pruning + INT8 Quantized (HQQ)",
+        "description": "Cosine similarity pruning + HQQ INT8 KV Cache (q_group=64, residual=128)",
+        "final_tokens": 28605,
+        "visual_tokens": 23505,
+        "peak_vram_gb": 9.45,
+        "prefill_latency_seconds": 78.06,
+        "speedup_vs_baseline": 0.77,
+        "vram_saved_gb": 1.459,
+        "vram_saved_pct": 13.37,
+        "token_reduction_pct": 35.28,
+        "visual_token_reduction_pct": 39.88,
+        "generated_text": "The image shows a section of an outdoor wall with some greenery in the background. The wall appears to be made of concrete and has patches where moss or algae have grown, indicating it might not receive much sunlight.\n\nIn terms:\n- **Objects**: Wall (concrete), vegetation.\n  - No people visible on this segment"
+      }
+    ],
+    "trajectory": [
+      {
+        "frame": 1,
+        "tokens": 442,
+        "dynamic_fp16_vram_gb": 8.13,
+        "hqq_int8_vram_gb": 8.12,
+        "hqq_int4_vram_gb": 8.12
+      },
+      {
+        "frame": 2,
+        "tokens": 884,
+        "dynamic_fp16_vram_gb": 8.15,
+        "hqq_int8_vram_gb": 8.14,
+        "hqq_int4_vram_gb": 8.14
+      },
+      {
+        "frame": 3,
+        "tokens": 1326,
+        "dynamic_fp16_vram_gb": 8.17,
+        "hqq_int8_vram_gb": 8.14,
+        "hqq_int4_vram_gb": 8.13
+      },
+      {
+        "frame": 4,
+        "tokens": 1768,
+        "dynamic_fp16_vram_gb": 8.18,
+        "hqq_int8_vram_gb": 8.16,
+        "hqq_int4_vram_gb": 8.15
+      },
+      {
+        "frame": 5,
+        "tokens": 2210,
+        "dynamic_fp16_vram_gb": 8.24,
+        "hqq_int8_vram_gb": 8.16,
+        "hqq_int4_vram_gb": 8.14
+      },
+      {
+        "frame": 6,
+        "tokens": 2652,
+        "dynamic_fp16_vram_gb": 8.24,
+        "hqq_int8_vram_gb": 8.18,
+        "hqq_int4_vram_gb": 8.16
+      },
+      {
+        "frame": 7,
+        "tokens": 3094,
+        "dynamic_fp16_vram_gb": 8.25,
+        "hqq_int8_vram_gb": 8.18,
+        "hqq_int4_vram_gb": 8.15
+      },
+      {
+        "frame": 8,
+        "tokens": 3536,
+        "dynamic_fp16_vram_gb": 8.25,
+        "hqq_int8_vram_gb": 8.19,
+        "hqq_int4_vram_gb": 8.17
+      },
+      {
+        "frame": 9,
+        "tokens": 3978,
+        "dynamic_fp16_vram_gb": 8.27,
+        "hqq_int8_vram_gb": 8.2,
+        "hqq_int4_vram_gb": 8.16
+      },
+      {
+        "frame": 10,
+        "tokens": 4420,
+        "dynamic_fp16_vram_gb": 8.29,
+        "hqq_int8_vram_gb": 8.21,
+        "hqq_int4_vram_gb": 8.17
+      },
+      {
+        "frame": 11,
+        "tokens": 4862,
+        "dynamic_fp16_vram_gb": 8.3,
+        "hqq_int8_vram_gb": 8.24,
+        "hqq_int4_vram_gb": 8.17
+      },
+      {
+        "frame": 12,
+        "tokens": 5304,
+        "dynamic_fp16_vram_gb": 8.32,
+        "hqq_int8_vram_gb": 8.25,
+        "hqq_int4_vram_gb": 8.18
+      },
+      {
+        "frame": 13,
+        "tokens": 5746,
+        "dynamic_fp16_vram_gb": 8.33,
+        "hqq_int8_vram_gb": 8.26,
+        "hqq_int4_vram_gb": 8.18
+      },
+      {
+        "frame": 14,
+        "tokens": 6188,
+        "dynamic_fp16_vram_gb": 8.35,
+        "hqq_int8_vram_gb": 8.28,
+        "hqq_int4_vram_gb": 8.19
+      },
+      {
+        "frame": 15,
+        "tokens": 6630,
+        "dynamic_fp16_vram_gb": 8.37,
+        "hqq_int8_vram_gb": 8.27,
+        "hqq_int4_vram_gb": 8.19
+      },
+      {
+        "frame": 16,
+        "tokens": 7072,
+        "dynamic_fp16_vram_gb": 8.38,
+        "hqq_int8_vram_gb": 8.28,
+        "hqq_int4_vram_gb": 8.2
+      },
+      {
+        "frame": 17,
+        "tokens": 7514,
+        "dynamic_fp16_vram_gb": 8.4,
+        "hqq_int8_vram_gb": 8.28,
+        "hqq_int4_vram_gb": 8.2
+      },
+      {
+        "frame": 18,
+        "tokens": 7956,
+        "dynamic_fp16_vram_gb": 8.42,
+        "hqq_int8_vram_gb": 8.3,
+        "hqq_int4_vram_gb": 8.21
+      },
+      {
+        "frame": 19,
+        "tokens": 8398,
+        "dynamic_fp16_vram_gb": 8.43,
+        "hqq_int8_vram_gb": 8.29,
+        "hqq_int4_vram_gb": 8.24
+      },
+      {
+        "frame": 20,
+        "tokens": 8840,
+        "dynamic_fp16_vram_gb": 8.45,
+        "hqq_int8_vram_gb": 8.31,
+        "hqq_int4_vram_gb": 8.25
+      },
+      {
+        "frame": 21,
+        "tokens": 9282,
+        "dynamic_fp16_vram_gb": 8.46,
+        "hqq_int8_vram_gb": 8.31,
+        "hqq_int4_vram_gb": 8.25
+      },
+      {
+        "frame": 22,
+        "tokens": 9724,
+        "dynamic_fp16_vram_gb": 8.48,
+        "hqq_int8_vram_gb": 8.33,
+        "hqq_int4_vram_gb": 8.27
+      },
+      {
+        "frame": 23,
+        "tokens": 10166,
+        "dynamic_fp16_vram_gb": 8.5,
+        "hqq_int8_vram_gb": 8.32,
+        "hqq_int4_vram_gb": 8.25
+      },
+      {
+        "frame": 24,
+        "tokens": 10608,
+        "dynamic_fp16_vram_gb": 8.51,
+        "hqq_int8_vram_gb": 8.34,
+        "hqq_int4_vram_gb": 8.27
+      },
+      {
+        "frame": 25,
+        "tokens": 11050,
+        "dynamic_fp16_vram_gb": 8.53,
+        "hqq_int8_vram_gb": 8.34,
+        "hqq_int4_vram_gb": 8.26
+      },
+      {
+        "frame": 26,
+        "tokens": 11492,
+        "dynamic_fp16_vram_gb": 8.54,
+        "hqq_int8_vram_gb": 8.36,
+        "hqq_int4_vram_gb": 8.27
+      },
+      {
+        "frame": 27,
+        "tokens": 11934,
+        "dynamic_fp16_vram_gb": 8.56,
+        "hqq_int8_vram_gb": 8.36,
+        "hqq_int4_vram_gb": 8.26
+      },
+      {
+        "frame": 28,
+        "tokens": 12376,
+        "dynamic_fp16_vram_gb": 8.57,
+        "hqq_int8_vram_gb": 8.37,
+        "hqq_int4_vram_gb": 8.28
+      },
+      {
+        "frame": 29,
+        "tokens": 12818,
+        "dynamic_fp16_vram_gb": 8.59,
+        "hqq_int8_vram_gb": 8.37,
+        "hqq_int4_vram_gb": 8.27
+      },
+      {
+        "frame": 30,
+        "tokens": 13260,
+        "dynamic_fp16_vram_gb": 8.61,
+        "hqq_int8_vram_gb": 8.39,
+        "hqq_int4_vram_gb": 8.28
+      },
+      {
+        "frame": 31,
+        "tokens": 13702,
+        "dynamic_fp16_vram_gb": 8.62,
+        "hqq_int8_vram_gb": 8.39,
+        "hqq_int4_vram_gb": 8.27
+      },
+      {
+        "frame": 32,
+        "tokens": 14144,
+        "dynamic_fp16_vram_gb": 8.64,
+        "hqq_int8_vram_gb": 8.41,
+        "hqq_int4_vram_gb": 8.28
+      },
+      {
+        "frame": 33,
+        "tokens": 14586,
+        "dynamic_fp16_vram_gb": 8.66,
+        "hqq_int8_vram_gb": 8.41,
+        "hqq_int4_vram_gb": 8.27
+      },
+      {
+        "frame": 34,
+        "tokens": 15028,
+        "dynamic_fp16_vram_gb": 8.67,
+        "hqq_int8_vram_gb": 8.42,
+        "hqq_int4_vram_gb": 8.29
+      },
+      {
+        "frame": 35,
+        "tokens": 15470,
+        "dynamic_fp16_vram_gb": 8.69,
+        "hqq_int8_vram_gb": 8.42,
+        "hqq_int4_vram_gb": 8.28
+      },
+      {
+        "frame": 36,
+        "tokens": 15912,
+        "dynamic_fp16_vram_gb": 8.71,
+        "hqq_int8_vram_gb": 8.44,
+        "hqq_int4_vram_gb": 8.3
+      },
+      {
+        "frame": 37,
+        "tokens": 16354,
+        "dynamic_fp16_vram_gb": 8.72,
+        "hqq_int8_vram_gb": 8.44,
+        "hqq_int4_vram_gb": 8.29
+      },
+      {
+        "frame": 38,
+        "tokens": 16796,
+        "dynamic_fp16_vram_gb": 8.74,
+        "hqq_int8_vram_gb": 8.46,
+        "hqq_int4_vram_gb": 8.31
+      },
+      {
+        "frame": 39,
+        "tokens": 17238,
+        "dynamic_fp16_vram_gb": 8.75,
+        "hqq_int8_vram_gb": 8.46,
+        "hqq_int4_vram_gb": 8.3
+      },
+      {
+        "frame": 40,
+        "tokens": 17680,
+        "dynamic_fp16_vram_gb": 8.77,
+        "hqq_int8_vram_gb": 8.47,
+        "hqq_int4_vram_gb": 8.32
+      },
+      {
+        "frame": 41,
+        "tokens": 18122,
+        "dynamic_fp16_vram_gb": 8.79,
+        "hqq_int8_vram_gb": 8.48,
+        "hqq_int4_vram_gb": 8.31
+      },
+      {
+        "frame": 42,
+        "tokens": 18564,
+        "dynamic_fp16_vram_gb": 8.8,
+        "hqq_int8_vram_gb": 8.49,
+        "hqq_int4_vram_gb": 8.33
+      },
+      {
+        "frame": 43,
+        "tokens": 19006,
+        "dynamic_fp16_vram_gb": 8.82,
+        "hqq_int8_vram_gb": 8.49,
+        "hqq_int4_vram_gb": 8.32
+      },
+      {
+        "frame": 44,
+        "tokens": 19448,
+        "dynamic_fp16_vram_gb": 8.84,
+        "hqq_int8_vram_gb": 8.51,
+        "hqq_int4_vram_gb": 8.34
+      },
+      {
+        "frame": 45,
+        "tokens": 19890,
+        "dynamic_fp16_vram_gb": 8.86,
+        "hqq_int8_vram_gb": 8.51,
+        "hqq_int4_vram_gb": 8.33
+      },
+      {
+        "frame": 46,
+        "tokens": 20332,
+        "dynamic_fp16_vram_gb": 8.87,
+        "hqq_int8_vram_gb": 8.53,
+        "hqq_int4_vram_gb": 8.34
+      },
+      {
+        "frame": 47,
+        "tokens": 20774,
+        "dynamic_fp16_vram_gb": 8.88,
+        "hqq_int8_vram_gb": 8.53,
+        "hqq_int4_vram_gb": 8.34
+      },
+      {
+        "frame": 48,
+        "tokens": 21216,
+        "dynamic_fp16_vram_gb": 8.9,
+        "hqq_int8_vram_gb": 8.54,
+        "hqq_int4_vram_gb": 8.35
+      },
+      {
+        "frame": 49,
+        "tokens": 21658,
+        "dynamic_fp16_vram_gb": 8.92,
+        "hqq_int8_vram_gb": 8.54,
+        "hqq_int4_vram_gb": 8.35
+      },
+      {
+        "frame": 50,
+        "tokens": 22100,
+        "dynamic_fp16_vram_gb": 8.93,
+        "hqq_int8_vram_gb": 8.56,
+        "hqq_int4_vram_gb": 8.37
+      },
+      {
+        "frame": 51,
+        "tokens": 22542,
+        "dynamic_fp16_vram_gb": 8.95,
+        "hqq_int8_vram_gb": 8.56,
+        "hqq_int4_vram_gb": 8.36
+      },
+      {
+        "frame": 52,
+        "tokens": 22984,
+        "dynamic_fp16_vram_gb": 8.97,
+        "hqq_int8_vram_gb": 8.58,
+        "hqq_int4_vram_gb": 8.38
+      },
+      {
+        "frame": 53,
+        "tokens": 23426,
+        "dynamic_fp16_vram_gb": 8.98,
+        "hqq_int8_vram_gb": 8.58,
+        "hqq_int4_vram_gb": 8.37
+      },
+      {
+        "frame": 54,
+        "tokens": 23868,
+        "dynamic_fp16_vram_gb": 9.0,
+        "hqq_int8_vram_gb": 8.59,
+        "hqq_int4_vram_gb": 8.39
+      },
+      {
+        "frame": 55,
+        "tokens": 24310,
+        "dynamic_fp16_vram_gb": 9.02,
+        "hqq_int8_vram_gb": 8.6,
+        "hqq_int4_vram_gb": 8.38
+      },
+      {
+        "frame": 56,
+        "tokens": 24752,
+        "dynamic_fp16_vram_gb": 9.03,
+        "hqq_int8_vram_gb": 8.61,
+        "hqq_int4_vram_gb": 8.39
+      },
+      {
+        "frame": 57,
+        "tokens": 25194,
+        "dynamic_fp16_vram_gb": 9.05,
+        "hqq_int8_vram_gb": 8.61,
+        "hqq_int4_vram_gb": 8.38
+      },
+      {
+        "frame": 58,
+        "tokens": 25636,
+        "dynamic_fp16_vram_gb": 9.07,
+        "hqq_int8_vram_gb": 8.63,
+        "hqq_int4_vram_gb": 8.4
+      },
+      {
+        "frame": 59,
+        "tokens": 26078,
+        "dynamic_fp16_vram_gb": 9.08,
+        "hqq_int8_vram_gb": 8.63,
+        "hqq_int4_vram_gb": 8.39
+      },
+      {
+        "frame": 60,
+        "tokens": 26520,
+        "dynamic_fp16_vram_gb": 9.1,
+        "hqq_int8_vram_gb": 8.65,
+        "hqq_int4_vram_gb": 8.41
+      },
+      {
+        "frame": 61,
+        "tokens": 26962,
+        "dynamic_fp16_vram_gb": 9.11,
+        "hqq_int8_vram_gb": 8.65,
+        "hqq_int4_vram_gb": 8.4
+      },
+      {
+        "frame": 62,
+        "tokens": 27404,
+        "dynamic_fp16_vram_gb": 9.13,
+        "hqq_int8_vram_gb": 8.67,
+        "hqq_int4_vram_gb": 8.42
+      },
+      {
+        "frame": 63,
+        "tokens": 27846,
+        "dynamic_fp16_vram_gb": 9.14,
+        "hqq_int8_vram_gb": 8.66,
+        "hqq_int4_vram_gb": 8.41
+      },
+      {
+        "frame": 64,
+        "tokens": 28288,
+        "dynamic_fp16_vram_gb": 9.16,
+        "hqq_int8_vram_gb": 8.68,
+        "hqq_int4_vram_gb": 8.43
+      },
+      {
+        "frame": 65,
+        "tokens": 28730,
+        "dynamic_fp16_vram_gb": 9.18,
+        "hqq_int8_vram_gb": 8.68,
+        "hqq_int4_vram_gb": 8.42
+      },
+      {
+        "frame": 66,
+        "tokens": 29172,
+        "dynamic_fp16_vram_gb": 9.19,
+        "hqq_int8_vram_gb": 8.7,
+        "hqq_int4_vram_gb": 8.44
+      },
+      {
+        "frame": 67,
+        "tokens": 29614,
+        "dynamic_fp16_vram_gb": 9.21,
+        "hqq_int8_vram_gb": 8.7,
+        "hqq_int4_vram_gb": 8.43
+      },
+      {
+        "frame": 68,
+        "tokens": 30056,
+        "dynamic_fp16_vram_gb": 9.23,
+        "hqq_int8_vram_gb": 8.72,
+        "hqq_int4_vram_gb": 8.44
+      },
+      {
+        "frame": 69,
+        "tokens": 30498,
+        "dynamic_fp16_vram_gb": 9.24,
+        "hqq_int8_vram_gb": 8.72,
+        "hqq_int4_vram_gb": 8.43
+      },
+      {
+        "frame": 70,
+        "tokens": 30940,
+        "dynamic_fp16_vram_gb": 9.26,
+        "hqq_int8_vram_gb": 8.73,
+        "hqq_int4_vram_gb": 8.45
+      },
+      {
+        "frame": 71,
+        "tokens": 31382,
+        "dynamic_fp16_vram_gb": 9.28,
+        "hqq_int8_vram_gb": 8.73,
+        "hqq_int4_vram_gb": 8.45
+      },
+      {
+        "frame": 72,
+        "tokens": 31824,
+        "dynamic_fp16_vram_gb": 9.29,
+        "hqq_int8_vram_gb": 8.75,
+        "hqq_int4_vram_gb": 8.46
+      },
+      {
+        "frame": 73,
+        "tokens": 32266,
+        "dynamic_fp16_vram_gb": 9.31,
+        "hqq_int8_vram_gb": 8.75,
+        "hqq_int4_vram_gb": 8.46
+      },
+      {
+        "frame": 74,
+        "tokens": 32708,
+        "dynamic_fp16_vram_gb": 9.32,
+        "hqq_int8_vram_gb": 8.77,
+        "hqq_int4_vram_gb": 8.47
+      },
+      {
+        "frame": 75,
+        "tokens": 33150,
+        "dynamic_fp16_vram_gb": 9.34,
+        "hqq_int8_vram_gb": 8.77,
+        "hqq_int4_vram_gb": 8.46
+      },
+      {
+        "frame": 76,
+        "tokens": 33592,
+        "dynamic_fp16_vram_gb": 9.36,
+        "hqq_int8_vram_gb": 8.78,
+        "hqq_int4_vram_gb": 8.48
+      },
+      {
+        "frame": 77,
+        "tokens": 34034,
+        "dynamic_fp16_vram_gb": 9.37,
+        "hqq_int8_vram_gb": 8.79,
+        "hqq_int4_vram_gb": 8.47
+      },
+      {
+        "frame": 78,
+        "tokens": 34476,
+        "dynamic_fp16_vram_gb": 9.39,
+        "hqq_int8_vram_gb": 8.8,
+        "hqq_int4_vram_gb": 8.49
+      },
+      {
+        "frame": 79,
+        "tokens": 34918,
+        "dynamic_fp16_vram_gb": 9.41,
+        "hqq_int8_vram_gb": 8.81,
+        "hqq_int4_vram_gb": 8.48
+      },
+      {
+        "frame": 80,
+        "tokens": 35360,
+        "dynamic_fp16_vram_gb": 9.42,
+        "hqq_int8_vram_gb": 8.82,
+        "hqq_int4_vram_gb": 8.5
+      },
+      {
+        "frame": 81,
+        "tokens": 35802,
+        "dynamic_fp16_vram_gb": 9.44,
+        "hqq_int8_vram_gb": 8.82,
+        "hqq_int4_vram_gb": 8.49
+      },
+      {
+        "frame": 82,
+        "tokens": 36244,
+        "dynamic_fp16_vram_gb": 9.46,
+        "hqq_int8_vram_gb": 8.84,
+        "hqq_int4_vram_gb": 8.51
+      },
+      {
+        "frame": 83,
+        "tokens": 36686,
+        "dynamic_fp16_vram_gb": 9.47,
+        "hqq_int8_vram_gb": 8.84,
+        "hqq_int4_vram_gb": 8.5
+      },
+      {
+        "frame": 84,
+        "tokens": 37128,
+        "dynamic_fp16_vram_gb": 9.49,
+        "hqq_int8_vram_gb": 8.85,
+        "hqq_int4_vram_gb": 8.52
+      },
+      {
+        "frame": 85,
+        "tokens": 37570,
+        "dynamic_fp16_vram_gb": 9.5,
+        "hqq_int8_vram_gb": 8.85,
+        "hqq_int4_vram_gb": 8.51
+      },
+      {
+        "frame": 86,
+        "tokens": 38012,
+        "dynamic_fp16_vram_gb": 9.52,
+        "hqq_int8_vram_gb": 8.87,
+        "hqq_int4_vram_gb": 8.53
+      },
+      {
+        "frame": 87,
+        "tokens": 38454,
+        "dynamic_fp16_vram_gb": 9.54,
+        "hqq_int8_vram_gb": 8.87,
+        "hqq_int4_vram_gb": 8.52
+      },
+      {
+        "frame": 88,
+        "tokens": 38896,
+        "dynamic_fp16_vram_gb": 9.55,
+        "hqq_int8_vram_gb": 8.89,
+        "hqq_int4_vram_gb": 8.54
+      },
+      {
+        "frame": 89,
+        "tokens": 39338,
+        "dynamic_fp16_vram_gb": 9.58,
+        "hqq_int8_vram_gb": 8.89,
+        "hqq_int4_vram_gb": 8.53
+      },
+      {
+        "frame": 90,
+        "tokens": 39780,
+        "dynamic_fp16_vram_gb": 9.59,
+        "hqq_int8_vram_gb": 8.91,
+        "hqq_int4_vram_gb": 8.54
+      },
+      {
+        "frame": 91,
+        "tokens": 40222,
+        "dynamic_fp16_vram_gb": 9.61,
+        "hqq_int8_vram_gb": 8.91,
+        "hqq_int4_vram_gb": 8.54
+      },
+      {
+        "frame": 92,
+        "tokens": 40664,
+        "dynamic_fp16_vram_gb": 9.62,
+        "hqq_int8_vram_gb": 8.92,
+        "hqq_int4_vram_gb": 8.56
+      },
+      {
+        "frame": 93,
+        "tokens": 41106,
+        "dynamic_fp16_vram_gb": 9.63,
+        "hqq_int8_vram_gb": 8.92,
+        "hqq_int4_vram_gb": 8.55
+      },
+      {
+        "frame": 94,
+        "tokens": 41548,
+        "dynamic_fp16_vram_gb": 9.65,
+        "hqq_int8_vram_gb": 8.94,
+        "hqq_int4_vram_gb": 8.57
+      },
+      {
+        "frame": 95,
+        "tokens": 41990,
+        "dynamic_fp16_vram_gb": 9.67,
+        "hqq_int8_vram_gb": 8.94,
+        "hqq_int4_vram_gb": 8.56
+      },
+      {
+        "frame": 96,
+        "tokens": 42432,
+        "dynamic_fp16_vram_gb": 9.68,
+        "hqq_int8_vram_gb": 8.96,
+        "hqq_int4_vram_gb": 8.57
+      },
+      {
+        "frame": 97,
+        "tokens": 42874,
+        "dynamic_fp16_vram_gb": 9.7,
+        "hqq_int8_vram_gb": 8.96,
+        "hqq_int4_vram_gb": 8.56
+      },
+      {
+        "frame": 98,
+        "tokens": 43316,
+        "dynamic_fp16_vram_gb": 9.72,
+        "hqq_int8_vram_gb": 8.98,
+        "hqq_int4_vram_gb": 8.58
+      },
+      {
+        "frame": 99,
+        "tokens": 43758,
+        "dynamic_fp16_vram_gb": 9.73,
+        "hqq_int8_vram_gb": 8.98,
+        "hqq_int4_vram_gb": 8.57
+      },
+      {
+        "frame": 100,
+        "tokens": 44200,
+        "dynamic_fp16_vram_gb": 9.75,
+        "hqq_int8_vram_gb": 8.99,
+        "hqq_int4_vram_gb": 8.59
+      }
+    ]
+  },
+  "single_image_benchmark": {
+    "sequence_length": 442,
+    "visual_tokens_unpruned": 391,
+    "results": [
+      {
+        "config": "dynamic_fp16",
+        "tokens": 150,
+        "latency_s": 9.77,
+        "tok_s": 15.3,
+        "vram_gb": 7.6,
+        "vram_saved_gb": 0.0
+      },
+      {
+        "config": "hqq_int8_res32",
+        "tokens": 150,
+        "latency_s": 11.37,
+        "tok_s": 13.2,
+        "vram_gb": 7.6,
+        "vram_saved_gb": 0.007
+      },
+      {
+        "config": "hqq_int4_res32",
+        "tokens": 21,
+        "latency_s": 1.94,
+        "tok_s": 10.8,
+        "vram_gb": 7.59,
+        "vram_saved_gb": 0.011
+      },
+      {
+        "config": "hqq_int4_res64",
+        "tokens": 21,
+        "latency_s": 1.91,
+        "tok_s": 11.0,
+        "vram_gb": 7.59,
+        "vram_saved_gb": 0.011
+      },
+      {
+        "config": "hqq_int2_res32",
+        "tokens": 51,
+        "latency_s": 5.04,
+        "tok_s": 10.1,
+        "vram_gb": 7.59,
+        "vram_saved_gb": 0.013
+      }
+    ],
+    "key_takeaway": "Single-image / short-context testing saves almost no VRAM (<0.2%) because static model weights (3B params = ~7.5 GB) dominate memory, and KV cache for 442 tokens is only ~14 MB. In contrast, long-context surveillance (44,200 tokens across 100 frames) makes KV cache a major memory bottleneck, where temporal pruning + INT8 achieves 1.46 GB (13.4%) peak memory reduction."
+  },
+  "system_status": {
+    "vlm_integration": {
+      "name": "Qwen2.5-VL-3B Integration",
+      "status": "COMPLETED",
+      "icon": "\u2713"
+    },
+    "visual_token_extraction": {
+      "name": "Visual Token Extraction & Hooking",
+      "status": "COMPLETED",
+      "icon": "\u2713"
+    },
+    "temporal_pruning": {
+      "name": "Temporal Token Pruning (Cosine Sim)",
+      "status": "COMPLETED",
+      "icon": "\u2713"
+    },
+    "kv_cache_benchmarking": {
+      "name": "KV Cache Quantization (FP16/INT8/INT4/INT2)",
+      "status": "COMPLETED",
+      "icon": "\u2713"
+    },
+    "long_context_testing": {
+      "name": "100-Frame Long Context Benchmarking",
+      "status": "COMPLETED",
+      "icon": "\u2713"
+    },
+    "full_argus_integration": {
+      "name": "Full Argus Integration (Memory & Perception)",
+      "status": "IN_PROGRESS",
+      "icon": "\u23f3"
+    }
+  }
+}

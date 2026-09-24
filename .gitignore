@@ -92,6 +92,7 @@ results/figures/*.pdf
 *.swp
 *.swo
 *~
+~$*
 .DS_Store
 Thumbs.db
 

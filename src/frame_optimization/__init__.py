@@ -10,3 +10,8 @@ from src.frame_optimization.delta_caption import (  # noqa: F401
     SceneState,
     CaptionRecord,
 )
+from src.frame_optimization.temporal_pruning import (  # noqa: F401
+    build_temporal_pruning_mask,
+    enforce_minimum_keep_ratio,
+    build_pruned_multimodal_package,
+)

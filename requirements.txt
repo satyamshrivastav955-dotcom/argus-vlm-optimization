@@ -62,3 +62,8 @@ pytest-cov>=4.1.0
 
 # ---- Optional: notebook utilities -------------------------
 ipywidgets>=8.0.0
+
+# ---- Interactive Dashboard & Presentation -----------------
+streamlit>=1.30.0
+plotly>=5.18.0
+python-pptx>=0.6.21
